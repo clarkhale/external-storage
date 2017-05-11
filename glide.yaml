@@ -48,3 +48,5 @@ import:
   subpackages:
   - pkg/util/goroutinemap
   - pkg/util/version
+- package: github.com/spf13/cobra
+- package: github.com/spf13/pflag  
