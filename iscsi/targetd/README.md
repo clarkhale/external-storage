@@ -34,12 +34,16 @@ multiple storage classes.
 
 These instructions should work for RHEL/CentOS 7+ and Fedora 24+.
 
+On Fedora 24, current updates to the SELinux policy do not work with
+targetd.  There is a bug filed:
+https://bugzilla.redhat.com/show_bug.cgi?id=1451139 Until this bug is
+resolve, SELinux must be set to permissive mode on Fedora 25+.
+
 ### A note about names
 
 In various places, iSCSI Qualified Names (IQNs) need to be created.
 These need to be unique.  So every target must have it's own unique
 IQN, and every client (initiator) must have its own IQN.
-
 
 IF NON-UNIQUE IQNs ARE USED, THEN THERE IS A POTENTIAL FOR DATA LOSS
 AND BAD PERFORMANCE!
