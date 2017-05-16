@@ -50,3 +50,4 @@ import:
   - pkg/util/version
 - package: github.com/spf13/cobra
 - package: github.com/spf13/pflag  
+- package: github.com/powerman/rpc-codec/jsonrpc2

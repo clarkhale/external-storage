@@ -79,3 +79,7 @@ script:
       sudo chown -R $(logname) /var/run/kubernetes;
     fi
   - make test-e2e
+  - popd
+  - pushd ./iscsi/targetd
+  - make container
+  - popd

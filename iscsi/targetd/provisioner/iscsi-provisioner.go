@@ -3,7 +3,8 @@ package provisioner
 import (
 	"errors"
 	"github.com/Sirupsen/logrus"
-	"github.com/kubernetes-incubator/external-storage/iscsi/targetd/provisioner/jsonrpc2"
+	"github.com/powerman/rpc-codec/jsonrpc2"
+	//"github.com/kubernetes-incubator/external-storage/iscsi/targetd/provisioner/jsonrpc2"
 	"github.com/kubernetes-incubator/external-storage/lib/controller"
 	"github.com/spf13/viper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

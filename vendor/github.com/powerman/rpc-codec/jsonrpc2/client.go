@@ -8,12 +8,10 @@ package jsonrpc2
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"math"
 	"net"
 	"net/rpc"
-	"os"
 	"reflect"
 	"sync"
 )
@@ -57,44 +55,36 @@ func (c *clientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	// If return error: it will be returned as is for this call.
 	// Allow param to be only Array, Slice, Map or Struct.
 	// When param is nil or uninitialized Map or Slice - omit "params".
-	fmt.Println("write request called")
 	if param != nil {
 		switch k := reflect.TypeOf(param).Kind(); k {
 		case reflect.Map:
-			fmt.Println("case 1")
 			if reflect.TypeOf(param).Key().Kind() == reflect.String {
 				if reflect.ValueOf(param).IsNil() {
 					param = nil
 				}
 			}
 		case reflect.Slice:
-			fmt.Println("case 2")
 			if reflect.ValueOf(param).IsNil() {
 				param = nil
 			}
 		case reflect.Array, reflect.Struct:
 		case reflect.Ptr:
-			fmt.Println("case 3")
 			switch k := reflect.TypeOf(param).Elem().Kind(); k {
 			case reflect.Map:
-				fmt.Println("case 4")
 				if reflect.TypeOf(param).Elem().Key().Kind() == reflect.String {
 					if reflect.ValueOf(param).Elem().IsNil() {
 						param = nil
 					}
 				}
 			case reflect.Slice:
-				fmt.Println("case 5")
 				if reflect.ValueOf(param).Elem().IsNil() {
 					param = nil
 				}
 			case reflect.Array, reflect.Struct:
 			default:
-				fmt.Println("case 6")
 				return NewError(errInternal.Code, "unsupported param type: Ptr to "+k.String())
 			}
 		default:
-			fmt.Println("case 7")
 			return NewError(errInternal.Code, "unsupported param type: "+k.String())
 		}
 	}
@@ -109,14 +99,6 @@ func (c *clientCodec) WriteRequest(r *rpc.Request, param interface{}) error {
 	req.Version = "2.0"
 	req.Method = r.ServiceMethod
 	req.Params = param
-	str, _ := json.Marshal(param)
-	fmt.Print("param: ")
-	os.Stdout.Write(str)
-	fmt.Println("")
-	str, _ = json.Marshal(req)
-	fmt.Print("req: ")
-	os.Stdout.Write(str)
-	fmt.Println("")
 	if err := c.enc.Encode(&req); err != nil {
 		return NewError(errInternal.Code, err.Error())
 	}
@@ -148,36 +130,36 @@ func (r *clientResponse) UnmarshalJSON(raw []byte) error {
 	if err := json.Unmarshal(raw, &o); err != nil {
 		return errors.New("bad response: " + string(raw))
 	}
-	//_, okVer := o["jsonrpc"]
+	_, okVer := o["jsonrpc"]
 	_, okID := o["id"]
 	_, okRes := o["result"]
 	_, okErr := o["error"]
-	if !okID || !(okRes || okErr) || (okRes && okErr) || len(o) > 3 {
-		return errors.New("bad response1: " + string(raw))
+	if !okVer || !okID || !(okRes || okErr) || (okRes && okErr) || len(o) > 3 {
+		return errors.New("bad response: " + string(raw))
 	}
-	//	if r.Version != "2.0" {
-	//		return errors.New("bad response2: " + string(raw))
-	//	}
+	if r.Version != "2.0" {
+		return errors.New("bad response: " + string(raw))
+	}
 	if okRes && r.Result == nil {
 		r.Result = &null
 	}
 	if okErr {
 		if o["error"] == nil {
-			return errors.New("bad response3: " + string(raw))
+			return errors.New("bad response: " + string(raw))
 		}
 		oe := make(map[string]*json.RawMessage)
 		if err := json.Unmarshal(*o["error"], &oe); err != nil {
-			return errors.New("bad response4: " + string(raw))
+			return errors.New("bad response: " + string(raw))
 		}
 		if oe["code"] == nil || oe["message"] == nil {
-			return errors.New("bad response5: " + string(raw))
+			return errors.New("bad response: " + string(raw))
 		}
 		if _, ok := oe["data"]; (!ok && len(oe) > 2) || len(oe) > 3 {
-			return errors.New("bad response6: " + string(raw))
+			return errors.New("bad response: " + string(raw))
 		}
 	}
 	if o["id"] == nil && !okErr {
-		return errors.New("bad response7: " + string(raw))
+		return errors.New("bad response: " + string(raw))
 	}
 
 	return nil
