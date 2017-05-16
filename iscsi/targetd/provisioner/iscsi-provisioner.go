@@ -210,10 +210,22 @@ func (p *iscsiProvisioner) getFirstAvailableLun() (int32, error) {
 	if len(exportList) == 255 {
 		return -1, errors.New("255 luns allocated no more luns available")
 	}
-	lun := int32(-1)
 	sort.Sort(exportList)
-	for i, export := range exportList {
-		if i < int(export.Lun) {
+	//this is sloppy way to remove duplicates
+	unique_export := make(map[int32]export)
+	for _, export := range exportList {
+		unique_export[export.Lun] = export
+	}
+	//this is a sloppy way to get the list of luns
+	luns := make([]int32, len(unique_export), len(unique_export))
+	i := 0
+	for _, export := range unique_export {
+		luns[i] = export.Lun
+		i++
+	}
+	lun := int32(-1)
+	for i, clun := range luns {
+		if i < int(clun) {
 			lun = int32(i)
 			break
 		}
