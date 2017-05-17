@@ -153,9 +153,16 @@ func initLog() {
 func (p *iscsiProvisioner) createVolume(options controller.VolumeOptions) (vol string, lun int32, pool string, err error) {
 	size := getSize(options)
 	vol = p.getVolumeName(options)
-	lun, err = p.getFirstAvailableLun()
 	pool = p.getVolumeGroup(options)
 	initiators := p.getInitiators(options)
+	log.Debugln("calling export_list")
+	exportList, err := p.export_list()
+	if err != nil {
+		log.Warnln(err)
+		return "", 0, "", err
+	}
+	log.Debugln("export_list called")
+	lun, err = getFirstAvailableLun(exportList)
 	if err != nil {
 		log.Warnln(err)
 		return "", 0, "", err
@@ -199,39 +206,44 @@ func (p *iscsiProvisioner) getInitiators(options controller.VolumeOptions) []str
 	return strings.Split(options.Parameters["initiators"], ",")
 }
 
-func (p *iscsiProvisioner) getFirstAvailableLun() (int32, error) {
-	log.Debugln("calling export_list")
-	exportList, err := p.export_list()
-	if err != nil {
-		log.Warnln(err)
-		return -1, err
-	}
-	log.Debugln("export_list called")
-	if len(exportList) == 255 {
-		return -1, errors.New("255 luns allocated no more luns available")
-	}
+func getFirstAvailableLun(exportList exportList) (int32, error) {
+	log.Debug("export List: ", exportList)
+
 	sort.Sort(exportList)
+	log.Debug("sorted export List: ", exportList)
 	//this is sloppy way to remove duplicates
 	unique_export := make(map[int32]export)
 	for _, export := range exportList {
 		unique_export[export.Lun] = export
 	}
+	log.Debug("unique luns sorted export List: ", unique_export)
+
 	//this is a sloppy way to get the list of luns
-	luns := make([]int32, len(unique_export), len(unique_export))
+	luns := make([]int, len(unique_export), len(unique_export))
 	i := 0
 	for _, export := range unique_export {
-		luns[i] = export.Lun
+		luns[i] = int(export.Lun)
 		i++
 	}
+	log.Debug("lun list: ", luns)
+
+	if len(luns) >= 255 {
+		return -1, errors.New("255 luns allocated no more luns available")
+	}
+
+	var sluns sort.IntSlice
+	sluns = luns[0:len(luns)]
+	sort.Sort(sluns)
+	log.Debug("sorted lun list: ", sluns)
 	lun := int32(-1)
-	for i, clun := range luns {
+	for i, clun := range sluns {
 		if i < int(clun) {
 			lun = int32(i)
 			break
 		}
 	}
 	if lun == -1 {
-		lun = int32(len(exportList))
+		lun = int32(len(sluns))
 	}
 	return lun, nil
 	//return 0, nil
