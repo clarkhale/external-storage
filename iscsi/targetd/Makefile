@@ -46,3 +46,7 @@ push: container
 clean:
 	rm -f iscsi-controller
 .PHONY: clean
+
+test: verify
+	go test ./provisiner
+.PHONY: test

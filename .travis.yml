@@ -81,5 +81,7 @@ script:
   - make test-e2e
   - popd
   - pushd ./iscsi/targetd
+  - make test
   - make container
+  - make clean
   - popd
