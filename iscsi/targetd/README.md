@@ -91,6 +91,27 @@ sudo losetup $LOOP disk.img
 sudo vgcreate vg-targetd $LOOP
 ```
 
+#### Optional:  Enable Thin Provisioning
+
+Logical Volumes created in a volume group are thick provisioned by
+default, i.e. space is reserved at time of creation.  Optionally, a
+LVM can use a thin provisioning pool to create thin provisioned volumes.  
+
+To create a thin provisioning pool, called `pool` this example,
+execute the following commands:
+
+```
+# This will create a 15GB thin pool in the vg-targetd volume group
+lvcreate -L 15G --thinpool pool vg-targetd
+
+# To manually create thin volumes, use the following command.  
+lvcreate -V 5G --thin -n lv_thin1 vg-targetd/pool
+```
+
+When configuring `targetd`, the pool_name setting in targetd.yaml will
+need to be set to <volume group name>/<thin pool name>.  In this
+example, it would be `vg-targetd/pool`.
+
 ### Configure the iSCSI server
 
 #### Install targetd and targetcli
@@ -123,6 +144,8 @@ configuration is provided below:
 password: ciao
 
 # defaults below; uncomment and edit
+# if using a thin pool, use <volume group name>/<thin pool name>
+# e.g vg-targetd/pool
 pool_name: vg-targetd
 user: admin
 ssl: false
