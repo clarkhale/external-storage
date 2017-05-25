@@ -29,7 +29,7 @@ endif
 
 all build:
 	GOOS=linux go install -v ./
-	GOOS=GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo -o iscsi-controller
+	GOOS=linux go build -a --ldflags '-extldflags "-static"' -tags netgo -installsuffix netgo -o iscsi-controller
 .PHONY: all build
 
 container: build quick-container
