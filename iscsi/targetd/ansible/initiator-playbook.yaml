@@ -1,0 +1,46 @@
+---
+- hosts: nodes
+  tasks:
+  - name: Install iscsi-initiator-utils
+    yum: 
+      name: iscsi-initiator-utils
+      state: latest
+  - name: Enable iscsid Service
+    service:
+      name: iscsid
+      enabled: yes
+      state: started
+  - name: Write iscsi initiator name
+    lineinfile:
+      regexp: '^(InitiatorName=).*'
+      dest: /etc/iscsi/initiatorname.iscsi
+      line: '\1{{ iscsi_initiator_name }}'
+      state: present
+      backrefs: yes
+  - name: restart iscsid
+    service:
+      name: iscsid
+      state: restarted
+- hosts: masters[0],targetd
+  tasks:
+  - name: gather facts for targetd
+    setup:
+    when: inventory_hostname in groups['targetd']
+  - name: create iscsi class template
+    template:
+      src: ./iscsi-provisioner-class.yaml.j2
+      dest:  /tmp/iscsi-provisioner-class.yaml
+    when: inventory_hostname in groups['masters']
+  - name: HACK trim final comma from initiator list
+    lineinfile: 
+      dest:  /tmp/iscsi-provisioner-class.yaml
+      regexp: '^( initiators: iqn.2003-03.net.deadvax:ose-master1,iqn.2003-03.net.deadvax:ose-master2,iqn.2003-03.net.deadvax:ose-master3,iqn.2003-03.net.deadvax:ose-node1,iqn.2003-03.net.deadvax:ose-node2), *$'
+      line: '\1'
+      backrefs: yes
+      state: present 
+    when: inventory_hostname in groups['masters']
+  - name: create iscsi dc template
+    template:
+      src: ./iscsi-provisioner-dc.yaml.j2
+      dest:  /tmp/iscsi-provisioner-dc.yaml
+    when: inventory_hostname in groups['masters']
