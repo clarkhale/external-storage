@@ -34,7 +34,7 @@
   - name: HACK trim final comma from initiator list
     lineinfile: 
       dest:  /tmp/iscsi-provisioner-class.yaml
-      regexp: '^( initiators: iqn.2003-03.net.deadvax:ose-master1,iqn.2003-03.net.deadvax:ose-master2,iqn.2003-03.net.deadvax:ose-master3,iqn.2003-03.net.deadvax:ose-node1,iqn.2003-03.net.deadvax:ose-node2), *$'
+      regexp: '^\(.*\), *$'
       line: '\1'
       backrefs: yes
       state: present 
