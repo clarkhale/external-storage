@@ -13,11 +13,20 @@
     yum:
       name: targetcli
       state: latest
+  - name: Install Firewalld 
+    yum:
+      name: firewalld
+      state: latest
+  - name: Ensure firewalld is running
+    service:
+      name: firewalld
+      state: started
+      enabled: yes
   - name: Firewalld allow iscsi traffic
     firewalld: 
-      service=https 
-      permanent=true 
-      state=enabled
+      service: https 
+      permanent: true 
+      state: enabled
   - name: Create Volume Group
     lvg:
       vg: "{{ targetd_lvm_volume_group }}"
