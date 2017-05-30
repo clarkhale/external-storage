@@ -24,7 +24,12 @@
       enabled: yes
   - name: Firewalld allow iscsi traffic
     firewalld: 
-      service: https 
+      service: iscsi-target
+      permanent: true 
+      state: enabled
+  - name: Firewalld allow targetd traffic
+    firewalld: 
+      port: 18700/tcp
       permanent: true 
       state: enabled
   - name: Create Volume Group
