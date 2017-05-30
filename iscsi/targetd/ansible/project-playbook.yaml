@@ -38,6 +38,7 @@
        command: >
          /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig
          get secret targetd-account -o json
+         -n iscsi-provisioner
        failed_when: false
        changed_when: false
        register: secret_test 
@@ -46,7 +47,7 @@
        command: >
          /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig
          secret new-basicauth targetd-account --username={{ targetd_user }} 
-         --password={{ targetd_password }}
+         --password={{ targetd_password }} -n iscsi-provisioner
        when: secret_test.rc == 1
    
      - name: Add cluster-reader role to service account
@@ -101,4 +102,19 @@
        template: 
          src: ./iscsi-provisioner-dc.yaml.j2
          dest:  /tmp/iscsi-provisioner-dc.yaml
+
+     - name: test if iscsi dc exists
+       command: >
+           /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
+           get dc iscsi-provisioner -n iscsi-provisioner
+       failed_when: false
+       changed_when: false
+       register: dc_test 
+     
+     - name: create the service account
+       shell: >
+           /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
+           create -f /tmp/iscsi-provisioner-dc.yaml
+           -n iscsi-provisioner
+       when: dc_test.rc != 0
     when: inventory_hostname in groups['masters']
