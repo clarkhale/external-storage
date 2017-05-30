@@ -21,26 +21,3 @@
     service:
       name: iscsid
       state: restarted
-- hosts: masters[0],targetd
-  tasks:
-  - name: gather facts for targetd
-    setup:
-    when: inventory_hostname in groups['targetd']
-  - name: create iscsi class template
-    template:
-      src: ./iscsi-provisioner-class.yaml.j2
-      dest:  /tmp/iscsi-provisioner-class.yaml
-    when: inventory_hostname in groups['masters']
-  - name: HACK trim final comma from initiator list
-    lineinfile: 
-      dest:  /tmp/iscsi-provisioner-class.yaml
-      regexp: '^\(.*\), *$'
-      line: '\1'
-      backrefs: yes
-      state: present 
-    when: inventory_hostname in groups['masters']
-  - name: create iscsi dc template
-    template:
-      src: ./iscsi-provisioner-dc.yaml.j2
-      dest:  /tmp/iscsi-provisioner-dc.yaml
-    when: inventory_hostname in groups['masters']
