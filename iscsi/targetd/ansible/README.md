@@ -6,6 +6,19 @@ configure targetd and the iSCSI provisioner.
 They are intended to be used with an inventory file belonging 
 to OpenShift Container Platform 3.4+ or OpenShift Origin 1.4+
 
+## Playbooks:
+
+* targetd-playbook.yaml - Configures the targetd server, including LVM
+* initiator-playbook.yaml - Configures the initiators
+* provisioner-playbook.yaml - Configures OpenShift project and provisioner
+
+These should be run in order above.
+
+## Bugs
+
+Currently, it appears that the targetd server needs to be rebooted if 
+firewalld is not currently installed.
+
 ## Example Host File
 
 ```
