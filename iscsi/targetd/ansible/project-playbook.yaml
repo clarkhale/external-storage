@@ -93,7 +93,7 @@
      - name: HACK trim final comma from initiator list
        lineinfile:
          dest:  /tmp/iscsi-provisioner-class.yaml
-         regexp: '^\(.*\), *$'
+         regexp: '^(.*), *$'
          line: '\1'
          backrefs: yes
          state: present
