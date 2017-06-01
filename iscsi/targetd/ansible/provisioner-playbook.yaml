@@ -75,6 +75,14 @@
          src: ./iscsi-provisioner-class.yaml.j2
          dest:  /tmp/iscsi-provisioner-class.yaml
    
+     - name: HACK trim final comma from initiator list
+       lineinfile:
+         dest:  /tmp/iscsi-provisioner-class.yaml
+         regexp: '^(.*), *$'
+         line: '\1'
+         backrefs: yes
+         state: present
+
      - name: test if iscsi storage class exists
        command: >
            /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
@@ -89,14 +97,6 @@
            create -f /tmp/iscsi-provisioner-class.yaml
            -n iscsi-provisioner
        when: class_test.rc != 0
-   
-     - name: HACK trim final comma from initiator list
-       lineinfile:
-         dest:  /tmp/iscsi-provisioner-class.yaml
-         regexp: '^(.*), *$'
-         line: '\1'
-         backrefs: yes
-         state: present
    
      - name: create iscsi provisioner deployment config template
        template: 
