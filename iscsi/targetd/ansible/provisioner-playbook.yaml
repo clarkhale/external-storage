@@ -75,7 +75,7 @@
          src: ./iscsi-provisioner-class.yaml.j2
          dest:  /tmp/iscsi-provisioner-class.yaml
    
-     - name: test if iscsi class exists
+     - name: test if iscsi storage class exists
        command: >
            /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
            get StorageClass iscsi -n iscsi-provisioner
@@ -83,7 +83,7 @@
        changed_when: false
        register: class_test 
      
-     - name: create the service account
+     - name: create the iscsi storage class 
        shell: >
            /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
            create -f /tmp/iscsi-provisioner-class.yaml
@@ -98,12 +98,12 @@
          backrefs: yes
          state: present
    
-     - name: create iscsi dc template
+     - name: create iscsi provisioner deployment config template
        template: 
          src: ./iscsi-provisioner-dc.yaml.j2
          dest:  /tmp/iscsi-provisioner-dc.yaml
 
-     - name: test if iscsi dc exists
+     - name: test if iscsi provisioner deployment config exists
        command: >
            /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
            get dc iscsi-provisioner -n iscsi-provisioner
@@ -111,7 +111,7 @@
        changed_when: false
        register: dc_test 
      
-     - name: create the service account
+     - name: create the iscsi provisioner deployment config
        shell: >
            /usr/bin/oc --config=/etc/origin/master/admin.kubeconfig 
            create -f /tmp/iscsi-provisioner-dc.yaml
