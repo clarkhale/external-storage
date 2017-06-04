@@ -35,6 +35,7 @@ targetd_password=ciao
 targetd_user=admin
 targetd_iscsi_target=iqn.2003-01.org.example.mach1:1234
 iscsi_provisioner_pullspec=raffaelespazzoli/iscsi-controller:0.0.1
+iscsi_provisioner_default_storage_class=true
 
 [targetd]
 targetd.cscc
