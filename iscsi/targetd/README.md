@@ -1,21 +1,21 @@
-# iscsi provisioner 
+# iSCSI-targetd provisioner 
 
-iscsi provisioner is a out of tree provisioner for iSCSI storage for
+iSCSI-targetd provisioner is an out of tree provisioner for iSCSI storage for
 Kubernetes and OpenShift.  The provisioniner uses the API provided by
 [targetd](https://github.com/open-iscsi/targetd) to create and export
 iSCSI storage on a remote server.
 
 ## Prerequisites
 
-iscsi provisioner has the following prerequisistes:
+iSCSI-targetd provisioner has the following prerequisistes:
 
 1. an iSCSI server managed by `targetd`
 2. all the openshift nodes correclty configured to communicate with the iSCSI server
-3. sufficient disk space available as LVM2 volume group (vg are the only supported backing storage at the momment)
+3. sufficient disk space available as LVM2 volume group (thinly provisioned volumes are also supported and can be used to alleviate this requirement)
 
 ## How it works
 
-when a pvc request is issued for an iscsi provisioner controlled
+When a pvc request is issued for an iscsi provisioner controlled
 storage class the following happens:
 
 1. a new volume in the configured volume group is created, the size of
@@ -26,8 +26,8 @@ accessible to all the configured initiators.
 
 
 Each storage class is tied to an iSCSI target and a volume
-group. Because an target can manage a maximum of 255 LUNs, each
-storage class manage at most 255 pvs. iscsi provisioner can manage
+group. Because a target can manage a maximum of 255 LUNs, each
+storage class manages at most 255 pvs. iSCSI-targetd provisioner can manage
 multiple storage classes.
 
 ## Installing the prerequisites
@@ -103,9 +103,6 @@ execute the following commands:
 ```
 # This will create a 15GB thin pool in the vg-targetd volume group
 lvcreate -L 15G --thinpool pool vg-targetd
-
-# To manually create thin volumes, use the following command.  
-lvcreate -V 5G --thin -n lv_thin1 vg-targetd/pool
 ```
 
 When configuring `targetd`, the pool_name setting in targetd.yaml will
@@ -121,7 +118,7 @@ to also install `targetcli` as it provides a simple user interface for
 looking at the state of the iSCSI system.
 
 ```
-sudo yum install -y targetcli targetd rsyslog
+sudo yum install -y targetcli targetd
 
 ```
 
@@ -212,11 +209,21 @@ After changing the initiator name, restart `iscsid.service`.
 
 ```
 sudo systemctl restart iscsid
+
+```
+### Install the iscsi provisioner pod in Kubernetes
+Run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username).
+This set of command will install iSCSI-targetd provisioner in the `default` namespace.
+```
+export NS=default 
+kubectl create secret generic targetd-account --from-literal=username=admin --from-literal=password=ciao -n $NS
+kubectl apply -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/kubernetes/iscsi-provisioner-d.yaml -n $NS
+kubectl apply -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/kubernetes/iscsi-provisioner-pvc.yaml -n $NS
 ```
 
-### Install the iscsi provisioner pod
+### Install the iscsi provisioner pod in Openshift
 
-run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
+Run the following commands. The secret correspond to username and password you have chosen for targetd (admin is the default for the username)
 ```
 oc new-project iscsi-provisioner
 oc create sa iscsi-provisioner
@@ -251,13 +258,17 @@ parameters:
 # this is a comma separated list of initiators that will be give access to the created volumes, they must correspond to what you have configured in your nodes.
   initiators: iqn.2017-04.com.example:node1 
 ```
-you can create one with the following command
+you can create one with the following command in kubernetes
 
+```
+oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/kubernetes/iscsi-provisioner-class.yaml
+```
+or this command in openshift
 ```
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-class.yaml
 ```
 ### Test iscsi provisioner
-create a pvc
+Create a pvc
 ```
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-provisioner-pvc.yaml
 ```
@@ -272,4 +283,34 @@ targetcli ls
 deploy a pod that uses the pvc
 ```
 oc create -f https://raw.githubusercontent.com/raffaelespazzoli/iscsi-controller/master/openshift/iscsi-test-pod.yaml
+```
+## Installing iSCSI provisioner using ansible
+
+If you have installed OpenShift using the ansible installer you can use a set of playbook to automate the above instructions.
+You can find more documentation on these playbooks [here](./ansible/README.md)
+before running the playbooks you need to annotate the inventory file with some additional variables and the nodes with the iscsi inititator name that you want to be created. Here is a summary of the variables
+
+| Variable Name  | Default  | Description  |
+|---|---|---|
+| targetd_lvm_volume_group |  vg-targetd |  the volume group to be created |
+| targetd_lvm_physical_volume  | N/A  | the physical volume to be used by the volume group  |
+| targetd_password  |   | the password used to authenticate the connection to targetd, you may want to not store this on your inventory file, you can pass this as `{{ lookup('env','TARGETD_PASSWORD') }}`  |
+|  targetd_user |  admin |  the username used to authenticate the connection to targetd, you may want to not store this on your inventory file, you can pass this as `{{ lookup('env','TARGETD_USERNAME') }}` |
+| targetd_iscsi_target  |  N/A | the name of the target to be created in the target server  |
+| iscsi_provisioner_pullspec  | raffaelespazzoli/iscsi-controller:0.0.1  |  the location of the iSCSI-targetd provisioner image |
+| iscsi_provisioner_default_storage_class  | false  | wheter the created storage class should be the default class  |
+
+All the nodes should have a lable with their definig the initiator name for that node, here is an example:
+
+```
+ose-node1.cscc openshift_node_labels="{'region': 'primary', 'zone': 'default'}" iscsi_initiator_name=iqn.2003-03.net.deadvax:ose-node1
+ose-node2.cscc openshift_node_labels="{'region': 'primary', 'zone': 'default'}" iscsi_initiator_name=iqn.2003-03.net.deadvax:ose-node2
+```
+
+
+To install iSCSI provisioner using ansible, run the following
+```
+ansible-playbook -i <your inventory file> ansible/targetd-playbook.yaml
+ansible-playbook -i <your inventory file> ansible/initiator-playbook.yaml
+ansible-playbook -i <your inventory file> ansible/provisioner-playbook.yaml
 ```
