@@ -294,7 +294,7 @@ before running the playbooks you need to annotate the inventory file with some a
 |---|---|---|
 | targetd_lvm_volume_group |  vg-targetd |  the volume group to be created |
 | targetd_lvm_physical_volume  | N/A  | the physical volume to be used by the volume group  |
-| targetd_password  |   | the password used to authenticate the connection to targetd, you may want to not store this on your inventory file, you can pass this as `{{ lookup('env','TARGETD_PASSWORD') }}`  |
+| targetd_password  | N/A  | the password used to authenticate the connection to targetd, you may want to not store this on your inventory file, you can pass this as `{{ lookup('env','TARGETD_PASSWORD') }}`  |
 |  targetd_user |  admin |  the username used to authenticate the connection to targetd, you may want to not store this on your inventory file, you can pass this as `{{ lookup('env','TARGETD_USERNAME') }}` |
 | targetd_iscsi_target  |  N/A | the name of the target to be created in the target server  |
 | iscsi_provisioner_pullspec  | raffaelespazzoli/iscsi-controller:0.0.1  |  the location of the iSCSI-targetd provisioner image |
